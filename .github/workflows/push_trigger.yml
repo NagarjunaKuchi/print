@@ -177,7 +177,7 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
           docker tag $SERVICE_NAME $IMAGE_ID:1.2.0.1
-          docker push $IMAGE_ID:$VERSION          
+          docker push print:$VERSION          
 
   sonar_analysis:
     runs-on: ubuntu-latest
