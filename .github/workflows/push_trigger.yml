@@ -176,7 +176,7 @@ jobs:
           fi
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
-          docker tag $SERVICE_NAME $IMAGE_ID:1.2.0.1
+          docker tag $SERVICE_NAME print:1.2.0.1
           docker push print:$VERSION          
 
   sonar_analysis:
