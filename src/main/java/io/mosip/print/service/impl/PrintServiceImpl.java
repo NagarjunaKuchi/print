@@ -32,6 +32,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import io.mosip.print.exception.*;
+import io.mosip.print.idpass.IDPassLiteDTO;
+import io.mosip.print.idpass.IDPassReaderComponent;
 import io.mosip.vercred.CredentialsVerifier;
 import io.mosip.vercred.exception.ProofDocumentNotFoundException;
 import io.mosip.vercred.exception.ProofTypeNotFoundException;
@@ -117,6 +119,9 @@ public class PrintServiceImpl implements PrintService{
 
 	/** The Constant UIN_TEXT_FILE. */
 	private static final String UIN_TEXT_FILE = "textFile";
+	
+	/** The Constant UIN_CARD_PDF. */
+	private static final String UIN_CARD_PDF = "uinPdf";
 
 	/** The Constant APPLICANT_PHOTO. */
 	private static final String APPLICANT_PHOTO = "ApplicantPhoto";
@@ -149,6 +154,10 @@ public class PrintServiceImpl implements PrintService{
 	/** The qr code generator. */
 	@Autowired
 	private QrCodeGenerator<QrVersion> qrCodeGenerator;
+	
+	/** The qr code generator. */
+	@Autowired
+	private IDPassReaderComponent idpassQrCodeGenerator;
 
 
 	/** The Constant VID_CREATE_ID. */
@@ -269,7 +278,7 @@ public class PrintServiceImpl implements PrintService{
 				password = getPassword(uin);
 			}
 			if (credentialType.equalsIgnoreCase("qrcode")) {
-				boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes);
+				setQrCode(decryptedJson.toString(), attributes, encryptionPin);
 				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
 				pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF,
 						password);
@@ -286,8 +295,8 @@ public class PrintServiceImpl implements PrintService{
 			byte[] textFileByte = createTextFile(decryptedJson.toString());
 			byteMap.put(UIN_TEXT_FILE, textFileByte);
 
-			boolean isQRcodeSet = setQrCode(decryptedJson.toString(), attributes);
-			if (!isQRcodeSet) {
+			IDPassLiteDTO sd = setQrCode(decryptedJson.toString(), attributes, encryptionPin);			
+			if (!sd.isResult()) {
 				printLogger.debug(PlatformErrorMessages.PRT_PRT_QRCODE_NOT_SET.name());
 			}
 			// getting template and placing original valuespng
@@ -297,7 +306,12 @@ public class PrintServiceImpl implements PrintService{
 				throw new TemplateProcessingFailureException(
 						PlatformErrorMessages.PRT_TEM_PROCESSING_FAILURE.getCode());
 			}
-			pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
+			pdfbytes = idpassQrCodeGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password, sd);
+			//pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
+			byteMap.put(UIN_CARD_PDF, pdfbytes);
+
+			byte[] uinbyte = attributes.get("UIN").toString().getBytes();
+			byteMap.put("UIN", uinbyte);
 
 		}
 			printStatusUpdate(requestId, pdfbytes, credentialType);
@@ -460,6 +474,29 @@ public class PrintServiceImpl implements PrintService{
 		}
 
 		return isQRCodeSet;
+	}
+	
+	private IDPassLiteDTO setQrCode(String qrString, Map<String, Object> attributes,String pincode) throws IOException {
+		boolean isQRCodeSet = false;
+		JSONObject qrJsonObj = JsonUtil.objectMapperReadValue(qrString, JSONObject.class);
+		qrJsonObj.remove("biometrics");
+		// String digitalSignaturedQrData =
+		// digitalSignatureUtility.getDigitalSignature(qrString);
+		// JSONObject textFileJson = new JSONObject();
+		// textFileJson.put("digitalSignature", digitalSignaturedQrData);
+		// Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+		// String printTextFileString = gson.toJson(textFileJson);
+		String photob64 = (String)attributes.get("ApplicantPhoto");
+		IDPassLiteDTO sd = idpassQrCodeGenerator.generateQrCode(qrJsonObj.toString(), photob64, pincode);
+		byte[] qrCodeBytes = sd.getQrCodeBytes();
+		if (qrCodeBytes != null) {
+			String imageString = io.mosip.kernel.core.util.CryptoUtil.encodeBase64String(qrCodeBytes);
+			attributes.put(QRCODE, "data:image/png;base64," + imageString);
+			isQRCodeSet = true;
+			sd.setResult(isQRCodeSet);
+		}
+
+		return sd;
 	}
 
 	/**

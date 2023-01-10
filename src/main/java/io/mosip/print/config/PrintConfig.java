@@ -1,5 +1,6 @@
 package io.mosip.print.config;
 
+import org.idpass.lite.IDPassLite;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
@@ -16,6 +17,8 @@ public class PrintConfig {
         threadPoolTaskScheduler.setThreadNamePrefix("ThreadPoolTaskScheduler");
         return threadPoolTaskScheduler;
     }
-
-
+    
+    public void IDPassIntialization() {
+    	IDPassLite.initialize();
+    }
 }
