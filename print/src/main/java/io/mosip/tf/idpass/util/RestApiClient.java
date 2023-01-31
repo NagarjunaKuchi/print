@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -136,6 +141,44 @@ public class RestApiClient {
 			}
 		} else
 			return new HttpEntity<Object>(headers);
+	}
+	
+	private String getIdPassToken() {
+		IdPassTokenRequest tokenRequest = new IdPassTokenRequest();
+		tokenRequest.setUsername("technoforte");
+		tokenRequest.setPassword("techno@123");
+		Gson gson = new Gson();
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		HttpPost post = new HttpPost("http://localhost:8000/api/v1/auth-token/");
+		try {
+			StringEntity postingString = new StringEntity(gson.toJson(tokenRequest));
+			post.setEntity(postingString);
+			post.setHeader("Content-type", "application/json");
+			HttpResponse response = httpClient.execute(post);
+			System.out.println(response);
+		}catch (Exception e) {
+			// TODO: handle exception
+		}
+		
+		return "";
+	}
+	
+
+	public class IdPassTokenRequest{
+		public String getUsername() {
+			return username;
+		}
+		public void setUsername(String username) {
+			this.username = username;
+		}
+		public String getPassword() {
+			return password;
+		}
+		public void setPassword(String password) {
+			this.password = password;
+		}
+		String username;
+		String password;
 	}
 
 }

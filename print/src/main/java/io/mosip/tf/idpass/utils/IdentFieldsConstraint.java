@@ -53,7 +53,16 @@ public class IdentFieldsConstraint {
 
     private String lastName;
     private String firstName;
+    private String fullName;
 
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+    
     public String getLastName() {
         return lastName;
     }

@@ -28,6 +28,7 @@ import javax.crypto.IllegalBlockSizeException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.google.common.collect.Multiset.Entry;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -282,7 +283,6 @@ public class PrintServiceImpl implements PrintService{
 				InputStream uinArtifact = templateGenerator.getTemplate(template, attributes, templateLang);
 				pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF,
 						password);
-
 			} else {
 
 			boolean isPhotoSet = setApplicantPhoto(individualBiometric, attributes);
@@ -291,11 +291,20 @@ public class PrintServiceImpl implements PrintService{
 			}
 			setTemplateAttributes(decryptedJson.toString(), attributes);
 			attributes.put(IdType.UIN.toString(), uin);
-
+			for (java.util.Map.Entry<String, Object> entry : attributes.entrySet()) {
+	            System.out.println("Key = " + entry.getKey() +
+	                             ", Value = " + entry.getValue());
+			}
 			byte[] textFileByte = createTextFile(decryptedJson.toString());
 			byteMap.put(UIN_TEXT_FILE, textFileByte);
 
-			IDPassLiteDTO sd = setQrCode(decryptedJson.toString(), attributes, encryptionPin);			
+			IDPassLiteDTO sd = setQrCode(decryptedJson.toString(), attributes, encryptionPin);	
+			System.out.println(sd.getIdfc().getAddressLine1());
+			System.out.println(sd.getIdfc().getAddressLine2());
+			System.out.println(sd.getIdfc().getAddressLine3());
+			System.out.println(sd.getIdfc().getFirstName());
+			System.out.println(sd.getIdfc().getLastName());
+			System.out.println(sd.getIdfc().getDateOfBirth());
 			if (!sd.isResult()) {
 				printLogger.debug(PlatformErrorMessages.PRT_PRT_QRCODE_NOT_SET.name());
 			}
@@ -307,7 +316,6 @@ public class PrintServiceImpl implements PrintService{
 						PlatformErrorMessages.PRT_TEM_PROCESSING_FAILURE.getCode());
 			}
 			pdfbytes = idpassQrCodeGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password, sd);
-			//pdfbytes = uinCardGenerator.generateUinCard(uinArtifact, UinCardType.PDF, password);
 			byteMap.put(UIN_CARD_PDF, pdfbytes);
 
 			byte[] uinbyte = attributes.get("UIN").toString().getBytes();
@@ -392,6 +400,11 @@ public class PrintServiceImpl implements PrintService{
 		printLogger.debug("PrintServiceImpl::getDocuments()::exit");
 
 		return byteMap;
+	}
+
+	private void foreach(Class<Byte> class1) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/**
@@ -480,12 +493,6 @@ public class PrintServiceImpl implements PrintService{
 		boolean isQRCodeSet = false;
 		JSONObject qrJsonObj = JsonUtil.objectMapperReadValue(qrString, JSONObject.class);
 		qrJsonObj.remove("biometrics");
-		// String digitalSignaturedQrData =
-		// digitalSignatureUtility.getDigitalSignature(qrString);
-		// JSONObject textFileJson = new JSONObject();
-		// textFileJson.put("digitalSignature", digitalSignaturedQrData);
-		// Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
-		// String printTextFileString = gson.toJson(textFileJson);
 		String photob64 = (String)attributes.get("ApplicantPhoto");
 		IDPassLiteDTO sd = idpassQrCodeGenerator.generateQrCode(qrJsonObj.toString(), photob64, pincode);
 		byte[] qrCodeBytes = sd.getQrCodeBytes();
