@@ -299,12 +299,6 @@ public class PrintServiceImpl implements PrintService{
 			byteMap.put(UIN_TEXT_FILE, textFileByte);
 
 			IDPassLiteDTO sd = setQrCode(decryptedJson.toString(), attributes, encryptionPin);	
-			System.out.println(sd.getIdfc().getAddressLine1());
-			System.out.println(sd.getIdfc().getAddressLine2());
-			System.out.println(sd.getIdfc().getAddressLine3());
-			System.out.println(sd.getIdfc().getFirstName());
-			System.out.println(sd.getIdfc().getLastName());
-			System.out.println(sd.getIdfc().getDateOfBirth());
 			if (!sd.isResult()) {
 				printLogger.debug(PlatformErrorMessages.PRT_PRT_QRCODE_NOT_SET.name());
 			}

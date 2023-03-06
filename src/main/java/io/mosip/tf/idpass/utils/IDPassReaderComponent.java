@@ -220,11 +220,6 @@ public class IDPassReaderComponent {
 			ret.setQrCodeBytes(qrcodeId);
 			ret.setSvg(card.asQRCodeSVG().getBytes());
 			ret.setIdent(ident);
-			writeStringUsingBufferedWritt_thenCorrect(qrcodeId, "qrcodeId");
-			writeStringUsingBufferedWritt_thenCorrect(card.asQRCodeSVG().getBytes(StandardCharsets.UTF_8),
-					"asQRCodeSVG");
-			writeStringUsingBufferedWritt_thenCorrect(card.asQRCodeSVG(), "asQRCodeSVGString");
-
 		} catch (IOException | IDPassException e) {
 			return null;
 		}
@@ -246,9 +241,10 @@ public class IDPassReaderComponent {
 		
 		ObjectNode fields = mapper.createObjectNode();
 		fields.put("identification_no", ident.getUIN());
-		fields.put("surname", ident.getSurName());
-		fields.put("given_name", ident.getGivenName());
+		fields.put("surname", ident.getFullName().split(" ")[1]);
+		fields.put("given_name", ident.getFullName().split(" ")[0]);
 		fields.put("sex", ident.getGender() == 1 ? "Female" : "Male");
+		fields.put("nationality","INDIAN");
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(m_config.getDatePattern());
 		if (ident.hasDateOfBirth()) {
 			Date dob = ident.getDateOfBirth();
@@ -285,14 +281,11 @@ public class IDPassReaderComponent {
 		headers.add("Content-Type", MediaType.APPLICATION_JSON.toString());
 		headers.add("Authorization", "Token " + getIdPassToken());
         HttpEntity<String> request = new HttpEntity<String>(jsonPayload, headers);
-		whenWriteStringUsingBufferedWritt_thenCorrect(jsonPayload);
         String response = restTemplate.postForObject(uri, request, String.class);        
         JsonNode node = mapper.readTree(response);
         String blob = node.get("files").get("pdf").asText();
         String b64 = blob.split(",")[1];
         pdfbytes = CryptoUtil.decodeBase64(b64);
-		whenWriteStringUsingBufferedWritter_thenCorrect(pdfbytes);
-
 		return pdfbytes;
 	}
 
@@ -311,58 +304,13 @@ public class IDPassReaderComponent {
 
 	public byte[] generateUinCard(InputStream in, UinCardType type, String password, IDPassLiteDTO sd)
 			throws ApisResourceAccessException {
-		byte[] pdfSignatured = null;
 		try {
-			// Calls editor.idpass.org REST API to generate initial PDF
-			byte[] pdfbuf = editorGenerate(sd);
-			Path tmp1 = Files.createTempFile(null, null);
-			OutputStream tmp1os = new FileOutputStream(tmp1.toFile());
-			tmp1os.write(pdfbuf);
-
-			List<URL> pdfList = new ArrayList<>();
-			pdfList.add(tmp1.toUri().toURL());
-			pdfList.add(signaturePageURL);
-			byte[] threepages = pdfGenerator.mergePDF(pdfList);
-			tmp1.toFile().delete();
-
-			PDFSignatureRequestDto request = new PDFSignatureRequestDto(5, 2, 232, 72, reason, 3, password);
-
-			request.setApplicationId("KERNEL");
-			request.setReferenceId("SIGN");
-			request.setData(CryptoUtil.encodeBase64String(threepages));
-			DateTimeFormatter format = DateTimeFormatter.ofPattern(env.getProperty(DATETIME_PATTERN));
-			LocalDateTime localdatetime = LocalDateTime
-					.parse(DateUtils.getUTCCurrentDateTimeString(env.getProperty(DATETIME_PATTERN)), format);
-
-			request.setTimeStamp(DateUtils.getUTCCurrentDateTimeString());
-			RequestWrapper<PDFSignatureRequestDto> requestWrapper = new RequestWrapper<>();
-
-			requestWrapper.setRequest(request);
-			requestWrapper.setRequesttime(localdatetime);
-			ResponseWrapper<?> responseWrapper;
-			SignatureResponseDto signatureResponseDto;
-
-			responseWrapper = (ResponseWrapper<?>) restClientService.postApi(ApiName.PDFSIGN, null, null,
-					requestWrapper, ResponseWrapper.class, MediaType.APPLICATION_JSON);
-
-			if (responseWrapper.getErrors() != null && !responseWrapper.getErrors().isEmpty()) {
-				ErrorDTO error = responseWrapper.getErrors().get(0);
-				throw new PDFSignatureException(error.getMessage());
-			}
-			signatureResponseDto = mapper.readValue(mapper.writeValueAsString(responseWrapper.getResponse()),
-					SignatureResponseDto.class);
-
-			pdfSignatured = CryptoUtil.decodeBase64(signatureResponseDto.getData());
-			//whenWriteStringUsingBufferedWritte_thenCorrect(pdfSignatured);
-
-		} catch (IOException | PDFGeneratorException e) {
-			throw new PDFGeneratorException(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorCode(),
-					e.getMessage() + ExceptionUtils.getStackTrace(e));
-		} catch (ApisResourceAccessException e) {
+			return editorGenerate(sd);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		return pdfSignatured;
+		return null;
 	}
 
 	// Notes: copied from 'mosip-functional-tests' repo
@@ -376,7 +324,6 @@ public class IDPassReaderComponent {
 			ByteArrayOutputStream imgBytes = new ByteArrayOutputStream();
 			ImageIO.write(image, "JPG", imgBytes);
 			jpgImg = imgBytes.toByteArray();
-			whenWriteStringUsingBufferedWritte_henCorrect(jpgImg);
 		} catch (IOException e) {
 			return null;
 		}
@@ -384,50 +331,6 @@ public class IDPassReaderComponent {
 		return jpgImg;
 	}
 
-	public void whenWriteStringUsingBufferedWritter_thenCorrect(byte[] payload) throws IOException {
-//    		    BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\payload.txt"));
-//    		    writer.write(payload);
-//    		    
-//    		    writer.close();
-
-		OutputStream out = new FileOutputStream("D:\\Actualpdfpayload.pdf");
-		out.write(payload);
-		out.close();
-	}
-
-	public static void whenWriteStringUsingBufferedWritte_henCorrect(byte[] payload) throws IOException {
-//  		    BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\payload.txt"));
-//  		    writer.write(payload);
-//  		    
-//  		    writer.close();
-
-		OutputStream out = new FileOutputStream("D:\\image.jpg");
-		out.write(payload);
-		out.close();
-	}
-
-	public void whenWriteStringUsingBufferedWritt_thenCorrect(String payload) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\payload.txt"));
-		writer.write(payload);
-
-		writer.close();
-
-	}
-
-	public void writeStringUsingBufferedWritt_thenCorrect(byte[] svg, String fileName) throws IOException {
-		OutputStream out = new FileOutputStream("D:\\" + fileName);
-		out.write(svg);
-		out.close();
-
-	}
-
-	public void writeStringUsingBufferedWritt_thenCorrect(String svg, String fileName) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\" + fileName));
-		writer.write(svg);
-
-		writer.close();
-
-	}
 	
 	private String getIdPassToken() {
 		IdPassTokenRequest tokenRequest = new IdPassTokenRequest();

@@ -94,7 +94,8 @@ public class IdentFieldsConstraint {
 
 	enum Extras {
 		AGE("Age", true), PHONE("Phone", true), GUARDIANNAME("Guardian Name", false),
-		GUARDIANUIN("Guardian UIN", false), GUARDIANRID("Guardian RID", false), ID("ID", true), EMAIL("Email", true);
+		GUARDIANUIN("Guardian UIN", false), GUARDIANRID("Guardian RID", false), ID("ID", true), EMAIL("Email", true),
+		FULLNAME("Full Name",true);
 
 		private final String text;
 		private final boolean visible;
@@ -131,6 +132,7 @@ public class IdentFieldsConstraint {
 			put("parentOrGuardianUIN", Extras.GUARDIANUIN);
 			put("id", Extras.ID);
 			put("email", Extras.EMAIL);
+			put("fullName", Extras.FULLNAME);
 		}
 	};
 
