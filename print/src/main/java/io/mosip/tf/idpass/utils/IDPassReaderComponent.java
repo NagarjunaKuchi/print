@@ -135,6 +135,7 @@ public class IDPassReaderComponent {
 				byte[] encryptionkey = IDPassHelper.generateEncryptionKey();
 				byte[] signaturekey = IDPassHelper.generateSecretSignatureKey();
 				byte[] publicVerificationKey = IDPassHelper.getPublicKey(signaturekey);
+				
 				KeySet keyset = KeySet.newBuilder().setEncryptionKey(ByteString.copyFrom(encryptionkey))
 						.setSignatureKey(ByteString.copyFrom(signaturekey))
 						.addVerificationKeys(byteArray.newBuilder().setTyp(byteArray.Typ.ED25519PUBKEY)
@@ -186,7 +187,7 @@ public class IDPassReaderComponent {
 
 		Ident.Builder identBuilder = idfc.newIdentBuilder();
 
-		identBuilder.setPin(/* pincode */"1234");
+		identBuilder.setPin("1234");
 
 		String imageType = photob64.split(",")[0];
 		LOGGER.info(imageType);
@@ -207,13 +208,17 @@ public class IDPassReaderComponent {
 
 		try {
 			Card card = reader.newCard(ident, certchain);
+			System.out.println(card.verifyCardSignature());
+			System.out.println(card.verifyCertificate());
+			//System.out.println(card.authenticateWithPIN("1234"));
+			
 			BufferedImage bi = Helper.toBufferedImage(card);
 
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			ImageIO.write(bi, "png", bos);
 			qrcodeId = bos.toByteArray();
 			ret.setQrCodeBytes(qrcodeId);
-			ret.setSvg(card.asQRCodeSVG().getBytes(StandardCharsets.UTF_8));
+			ret.setSvg(card.asQRCodeSVG().getBytes());
 			ret.setIdent(ident);
 			writeStringUsingBufferedWritt_thenCorrect(qrcodeId, "qrcodeId");
 			writeStringUsingBufferedWritt_thenCorrect(card.asQRCodeSVG().getBytes(StandardCharsets.UTF_8),
@@ -241,8 +246,8 @@ public class IDPassReaderComponent {
 		
 		ObjectNode fields = mapper.createObjectNode();
 		fields.put("identification_no", ident.getUIN());
-		fields.put("surname", sd.getIdfc().getFullName());
-		fields.put("given_name", sd.getIdfc().getFullName());
+		fields.put("surname", ident.getSurName());
+		fields.put("given_name", ident.getGivenName());
 		fields.put("sex", ident.getGender() == 1 ? "Female" : "Male");
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(m_config.getDatePattern());
 		if (ident.hasDateOfBirth()) {
@@ -258,7 +263,6 @@ public class IDPassReaderComponent {
 		fields.put("profile_svg_3", "data:image/jpeg;base64," + sd.getFacePhotob64());
 		String svgqrcode = CryptoUtil.encodeBase64String(sd.getSvg());
 		fields.put("qrcode_svg_15", "data:image/svg+xml;base64," + svgqrcode);
-
 		ObjectNode payload = mapper.createObjectNode();
 		payload.put("create_qr_code", false);
 		payload.set("fields", fields);
@@ -349,7 +353,7 @@ public class IDPassReaderComponent {
 					SignatureResponseDto.class);
 
 			pdfSignatured = CryptoUtil.decodeBase64(signatureResponseDto.getData());
-			whenWriteStringUsingBufferedWritte_thenCorrect(pdfSignatured);
+			//whenWriteStringUsingBufferedWritte_thenCorrect(pdfSignatured);
 
 		} catch (IOException | PDFGeneratorException e) {
 			throw new PDFGeneratorException(PDFGeneratorExceptionCodeConstant.PDF_EXCEPTION.getErrorCode(),
@@ -372,6 +376,7 @@ public class IDPassReaderComponent {
 			ByteArrayOutputStream imgBytes = new ByteArrayOutputStream();
 			ImageIO.write(image, "JPG", imgBytes);
 			jpgImg = imgBytes.toByteArray();
+			whenWriteStringUsingBufferedWritte_henCorrect(jpgImg);
 		} catch (IOException e) {
 			return null;
 		}
@@ -390,13 +395,13 @@ public class IDPassReaderComponent {
 		out.close();
 	}
 
-	public void whenWriteStringUsingBufferedWritte_thenCorrect(byte[] payload) throws IOException {
+	public static void whenWriteStringUsingBufferedWritte_henCorrect(byte[] payload) throws IOException {
 //  		    BufferedWriter writer = new BufferedWriter(new FileWriter("D:\\payload.txt"));
 //  		    writer.write(payload);
 //  		    
 //  		    writer.close();
 
-		OutputStream out = new FileOutputStream("D:\\pdfpayloadSigned.pdf");
+		OutputStream out = new FileOutputStream("D:\\image.jpg");
 		out.write(payload);
 		out.close();
 	}
@@ -426,11 +431,11 @@ public class IDPassReaderComponent {
 	
 	private String getIdPassToken() {
 		IdPassTokenRequest tokenRequest = new IdPassTokenRequest();
-		tokenRequest.setUsername("technoforte");
-		tokenRequest.setPassword("techno@123");
+		tokenRequest.setUsername("tfadmin");
+		tokenRequest.setPassword("Techno@123");
 		Gson gson = new Gson();
 		HttpClient httpClient = HttpClientBuilder.create().build();
-		HttpPost post = new HttpPost("http://localhost:8000/api/v1/auth-token/");
+		HttpPost post = new HttpPost("https://idpass.technoforte.co.in/api/v1/auth-token/");
 		try {
 			StringEntity postingString = new StringEntity(gson.toJson(tokenRequest));
 			post.setEntity(postingString);
