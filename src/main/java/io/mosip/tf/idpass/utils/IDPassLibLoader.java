@@ -38,6 +38,7 @@ public class IDPassLibLoader extends IDPassLoader {
 
 		String idpasslibFullPath = "";
 		URL url = IDPassLoader.getThisJarPath(IDPassReader.class);
+		System.out.println("url : " + url);
 
 		try {
 			boolean istemp1 = false;
@@ -48,6 +49,7 @@ public class IDPassLibLoader extends IDPassLoader {
 			if (url.toString().startsWith("jar")) {
 				String[] jarinjar = url.toString().split("!");
 				url = doubleExtract(jarinjar);
+				System.out.println("doubleExtract url : " + url);
 				istemp1 = true;
 			}
 
@@ -57,6 +59,7 @@ public class IDPassLibLoader extends IDPassLoader {
 				// 3) Get absolute path of library from temp dir
 				file = copyToTempDirectory(idpasslib, url);
 				idpasslibFullPath = file.getAbsolutePath();
+				System.out.println("idpasslibFullPath : " + idpasslibFullPath);
 				istemp2 = true;
 			} else {
 				// 1) Get absolute path of library from resource
