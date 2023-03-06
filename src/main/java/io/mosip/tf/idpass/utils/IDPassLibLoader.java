@@ -53,7 +53,7 @@ public class IDPassLibLoader extends IDPassLoader {
 				istemp1 = true;
 			}
 
-			if (IDPassLoader.isJarFile(url)) {
+			if (istemp1) {
 				// 1) create temp dir
 				// 2) Unzip jar into temp dir
 				// 3) Get absolute path of library from temp dir
