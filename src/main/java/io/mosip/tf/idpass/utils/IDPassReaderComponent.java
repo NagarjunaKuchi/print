@@ -122,7 +122,7 @@ public class IDPassReaderComponent {
 	public IDPassReaderComponent(IDPassliteConfig config) throws IDPassException, IOException {
 		if (reader == null) {
 			try {
-				IDPassLite.initialize();
+				IDPassLibLoader.loadLibrary();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -241,8 +241,8 @@ public class IDPassReaderComponent {
 		
 		ObjectNode fields = mapper.createObjectNode();
 		fields.put("identification_no", ident.getUIN());
-		fields.put("surname", ident.getFullName().split(" ")[1]);
-		fields.put("given_name", ident.getFullName().split(" ")[0]);
+		fields.put("surname", ident.getSurName());
+		fields.put("given_name", ident.getGivenName());
 		fields.put("sex", ident.getGender() == 1 ? "Female" : "Male");
 		fields.put("nationality","INDIAN");
 		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(m_config.getDatePattern());
