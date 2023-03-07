@@ -122,7 +122,7 @@ public class IDPassReaderComponent {
 	public IDPassReaderComponent(IDPassliteConfig config) throws IDPassException, IOException {
 		if (reader == null) {
 			try {
-				IDPassLibLoader.loadLibrary();
+				IDPassLite.initialize();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
